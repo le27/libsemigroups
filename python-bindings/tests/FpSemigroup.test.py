@@ -72,22 +72,32 @@ class TestFpSemigroup(unittest.TestCase):
 
     def test_size(self):
         self.assertEqual(FpSemigroup(["a"], [["a", "aa"]]).size(),1)
-        self.assertEqual(FpSemigroup(["a","b"], [["a", "aa"],['b','bb'],['ab','ba']]).size(),3)
+        self.assertEqual(FpSemigroup(["a","b"], [["a", "aa"],['b','bb'],\
+        ['ab','ba']]).size(),3)
         self.assertEqual(FpSemigroup([0], [[[0], [0,0]]]).size(),1)
-        self.assertEqual(FpSemigroup([0,1], [[[0], [0,0]],[[1],[1,1]],[[0,1],[1,0]]]).size(),3)
+        self.assertEqual(FpSemigroup([0,1], [[[0], [0,0]],[[1],[1,1]],\
+        [[0,1],[1,0]]]).size(),3)
 
-    def word_to_class_index(self):
+    def test_word_to_class_index(self):
         FpS=FpSemigroup(["a","b"], [["a", "aa"],['b','bb'],['ab','ba']])
         FpS2=FpSemigroup([],[])
-        FpS.word_to_class_index([0,1,0])
-        FpS.word_to_class_index("aba")
         e=FpSemigroupElement(FpS,"aba")
         FpS.word_to_class_index(e)
         with self.assertRaises(TypeError):
             FpS.word_to_class_index(1)
             FpS.word_to_class_index([1,'0'])
             FpS.word_to_class_index(FpSemigroupElement(FpS2,"aba"))
-        self.assertEqual(FpS.word_to_class_index(e),FpS.word_to_class_index("abaaabb"))
+        self.assertEqual(FpS.word_to_class_index(e),
+        FpS.word_to_class_index(FpSemigroupElement(FpS,"abaaabb")))
+
+    def test_repr(self):
+        self.assertEqual(FpSemigroup([1,2],[[[1,1],[1]],[[2,2,2],[2]],\
+        [[1,2],[2,1]]]).__repr__(),"<FpSemigroup <1,2|11=1,222=2,12=21>>")
+        self.assertEqual(FpSemigroup(["a","b"],[["aa","a"],["bbb","ab"],\
+        ["ab","ba"]]).__repr__(),"<FpSemigroup <a,b|aa=a,bbb=ab,ab=ba>>")
+        self.assertEqual(FpSemigroup(["a","b"],[["aa","a"],["bbbbbbbbbbbbbb\
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","b"],["ab","ba"]]).__repr__(),\
+        "<FpSemigroup with 2 generators and 3 relations>")
 
 
 class TestFpSemigroupElement(unittest.TestCase):
@@ -119,7 +129,17 @@ class TestFpSemigroupElement(unittest.TestCase):
             a*other
         with self.assertRaises(TypeError):
             FpSemigroupElement(FpSemigroup(["a","b"],[]),"aba")*a
-        self.assertEqual(a*a,FpS.word_to_class_index(FpSemigroupElement(FpS,"abaaba")))
+        self.assertEqual(a*a,FpS.word_to_class_index( \
+                        FpSemigroupElement(FpS,"abaaba")))
+
+    def test_repr(self):
+        FpS = FpSemigroup([1,2],[[[1,1],[1]],[[2,2,2],[2]]])
+        self.assertEqual(FpSemigroupElement(FpS,[1,2]).__repr__(),
+                                        "<FpSemigroup Element '[1, 2]'>")
+        FpS = FpSemigroup(["a","b"],[["aa","a"],["bbb","b"],["ab","ba"]])
+        self.assertEqual(FpSemigroupElement(FpS,"ab").__repr__(),
+                                        "<FpSemigroup Element 'ab'>")
+
 
 class TestFpMonoid(unittest.TestCase):
 
@@ -182,23 +202,35 @@ class TestFpMonoid(unittest.TestCase):
 
     def test_size(self):
         self.assertEqual(FpMonoid(["a"], [["a", "aa"]]).size(),2)
-        self.assertEqual(FpMonoid(["a","b"], [["a", "aa"],['b','bb'],['ab','ba']]).size(),4)
+        self.assertEqual(FpMonoid(["a","b"], [["a", "aa"],['b','bb'],
+        ['ab','ba']]).size(),4)
         self.assertEqual(FpMonoid([1], [[[1], [1,1]]]).size(),2)
-        self.assertEqual(FpMonoid([1,2], [[[2], [2,2]],[[1],[1,1]],[[2,1],[1,2]]]).size(),4)
+        self.assertEqual(FpMonoid([1,2], [[[2], [2,2]],[[1],[1,1]],
+        [[2,1],[1,2]]]).size(),4)
 
-    def word_to_class_index(self):
+    def test_word_to_class_index(self):
         FpM=FpMonoid(["a","b"], [["a", "aa"],['b','bb'],['ab','ba']])
         FpM2=FpMonoid([],[])
-        FpM.word_to_class_index([1,2,1])
-        FpM.word_to_class_index("aba")
+        FpM.word_to_class_index(FpSemigroupElement(FpM,"aba"))
         a=FpMonoidElement(FpM,"aba")
         FpM.word_to_class_index(a)
         with self.assertRaises(TypeError):
             FpM.word_to_class_index(1)
+        with self.assertRaises(TypeError):
             FpM.word_to_class_index([2,'1'])
-            FpM.word_to_class_index(FpSemigroupElement(FpS2,"aba"))
-        self.assertEqual(FpM.word_to_class_index(a),FpM.word_to_class_index("abaaabb"))
+        with self.assertRaises(ValueError):
+            FpM.word_to_class_index(FpSemigroupElement(FpM2,"aba"))
+        self.assertEqual(FpM.word_to_class_index(a),
+        FpM.word_to_class_index(FpMonoidElement(FpM,"abaaabb")))
 
+    def test_repr(self):
+        self.assertEqual(FpMonoid([1,2],[[[1,1],[1]],[[2,2,2],[2]],\
+        [[1,2],[2,1]]]).__repr__(),"<FpMonoid <1,2|11=1,222=2,12=21>>")
+        self.assertEqual(FpMonoid(["a","b"],[["aa","a"],["bbb","ab"],\
+        ["ab","ba"]]).__repr__(),"<FpMonoid <a,b|aa=a,bbb=ab,ab=ba>>")
+        self.assertEqual(FpMonoid(["a","b"],[["aa","a"],["bbbbbbbbbbbbbb\
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","b"],["ab","ba"]]).__repr__(),\
+        "<FpMonoid with 2 generators and 3 relations>")
 
 class TestFpMonoidElement(unittest.TestCase):
 

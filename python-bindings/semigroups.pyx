@@ -547,11 +547,11 @@ cdef class FpSemigroup:
             if self._is_string_alphabet:
                 for i in xrange(len(rels)):
                     if not isinstance(rels[i],list):
-                        raise TypeError("each relation should"+
+                        raise TypeError("each relation should"+ 
                                         " be a pair of lists")
 
                     if not len(rels[i]) == 2:
-                        raise ValueError("each relation should "+
+                        raise ValueError("each relation should "+ 
                                          "be a pair of lists")
 
                     for j in [0,1]:
@@ -840,8 +840,8 @@ cdef class FpSemigroup:
         if len(rep)<80:
             return rep
         else:
-            return "<FpSemigroup with " + str(len(self._alphabet)) 
-            + " generators and " + str(len(self._relations)) + " relations>"
+            return "<FpSemigroup with " + str(len(self._alphabet)) + \
+            " generators and " + str(len(self._relations)) + " relations>"
 
 cdef class FpMonoid(FpSemigroup):
     """FpMonoid Object
