@@ -478,8 +478,7 @@ cdef class FpSemigroup:
          add link to documentation for functions when it becomes available.
     """    
 
-
-    cdef cpp.Congruence* _congruence 
+    cdef cpp.Congruence* _congruence
 
     cdef cpp.RWS* _rws
     
@@ -487,7 +486,7 @@ cdef class FpSemigroup:
     #(even if using integer notation)
     cdef vector[string] _alphabet
 
-    cdef vector[pair[vector[uint64_t],vector[uint64_t]]] _relations 
+    cdef vector[pair[vector[uint64_t],vector[uint64_t]]] _relations
 
     #a vector of relations used to define a congruence
     cdef vector[pair[vector[uint64_t],vector[uint64_t]]] _extra
@@ -967,9 +966,9 @@ cdef class FpMonoid(FpSemigroup):
         lefteq = [[[i+1,0],[i+1]]for i in xrange(self._size)]
         righteq = [[[0,i+1],[i+1]]for i in xrange(self._size)]
 
-        self._e_relations=rels + [[[0,0],[0]]] + lefteq + righteq
+        self._e_relations = rels + [[[0,0],[0]]] + lefteq + righteq
         self._congruence = new cpp.Congruence(self._cong,self._size + 1,
-                                              self._e_relations,self._extra)
+                                                self._e_relations,self._extra)
 
 
     def alphabet(self):
