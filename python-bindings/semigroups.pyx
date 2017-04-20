@@ -26,16 +26,11 @@ cimport semigroups_cpp as cpp
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.pair cimport pair
-from libc.stdint cimport uint32_t
 from libc.stdint cimport uint64_t
 
 #cdef class MyCppElement(cpp.Element):
 #    pass
 
-cdef class Nothing:
-    def __cinit__(self):
-        pass
-   
 
 cdef class Element:
     """
@@ -97,31 +92,6 @@ cdef class Element:
         assert self._handle.degree() == other._handle.degree()
         product.redefine(self._handle, other._handle)
         return self.new_from_handle(product)
-	
-    def __pow__(self,power,modulo):#It works, but don't understand why it needs 'modulo' argument aal20
-        assert isinstance(power,int)
-        assert power>0
-
-        #Converts power to binary, then constructs element to the power of 2^n for needed n.
-        binaryString=bin(power-1)[2:]
-        powerOf2List=[self]
-        for x in binaryString:
-            powerOf2List.append(powerOf2List[-1].__mul__(powerOf2List[-1]))
-        output=self
-
-	#generates answer using element to the power of powers of 2 (binary tells you which ones to multiply)
-        for i in range(len(binaryString)):
-            if binaryString[i]=="1":
-                 output=output.__mul__(powerOf2List[i])
-        return output
-
-        '''
-        >>> from semigroups import Semigroup, PythonElement, Transformation
-        >>> y=Transformation([2,1,0])
-        >>> y**2
-        Transformation([0, 1, 2])
-        >>> y*y
-        Transformation([0, 1, 2])'''
     
     def __richcmp__(Element self, Element other, int op):
         """Ref: http://docs.cython.org/src/userguide/special_methods.html#rich-comparisons"""
@@ -145,7 +115,7 @@ cdef class Element:
         Construct a new element from a specified handle and with the
         same class as ``self``.
         """
-        cdef Element result = self.__class__(Nothing)
+        cdef Element result = self.__class__(None)
         result._handle = handle[0].really_copy()
         return result
 
@@ -159,14 +129,9 @@ cdef class Transformation(Element):
         >>> Transformation([2,1,1])
         [2, 1, 1]
     """
-    def __init__(self, List):
-        
-        if List is not Nothing:
-            assert isinstance(List,list)
-            assert max(List)+1<=len(List)
-            self._handle = new cpp.Transformation[uint16_t](List)
-
-
+    def __init__(self, iterable):
+        if iterable is not None:
+            self._handle = new cpp.Transformation[uint16_t](iterable)
 
     def __iter__(self):
         """
@@ -195,31 +160,20 @@ cdef class Transformation(Element):
         """
         return "Transformation(" + str(list(self)) + ")"
 
-
-
 cdef class PartialPerm(Element):
     """
     A class for handles to libsemigroups partial perm.
     """
-
     def __init__(self, *args):
         if len(args) == 1 and args[0] == None:
             return
+        #TODO check the args 
         dom, ran, deg = args[0], args[1], args[2]
+        assert max(dom) < deg and max(ran) < deg
         assert type(deg) is int
-        assert len(dom) == len(ran)
-        if len(dom)!=0:
-            assert max(dom) < deg and max(ran) < deg
-        imglist = [65535] * deg
-        for i in range(len(dom)):
-            assert isinstance(dom[i],int) and isinstance(ran[i],int)
-            assert dom[i]>=0 and ran[i]>=0
-            
-            #Ensures range and domain have no repeats
-            assert ran[i] not in imglist
-            assert dom.count(i)<2
-
-            imglist[dom[i]]=ran[i]
+        imglist = [-1] * deg
+        for x in dom:
+            imglist[x] = ran[x]
 
         self._handle = new cpp.PartialPerm[uint16_t](imglist)
 
@@ -235,12 +189,11 @@ cdef class PartialPerm(Element):
 
         EXAMPLES::
 
-            >>> from semigroups import *
-	    >>> PartialPerm([1,4,2],[2,3,4],6)
-	    PartialPerm([2, 4, -1, 3, -1, -1])
-
+            >>> from semigroups import PartialPerm
+            >>> PartialPerm([1,2,0])
+            [1, 2, 0]
         """
-        return "PartialPerm(" + str(list(self)).replace('65535','-1') + ")"
+        return "PartialPerm(" + str(list(self)) + ")"
 
 cdef class PythonElement(Element):
     """
@@ -342,8 +295,8 @@ cdef class Semigroup:
     def current_max_word_length(self):
         return self._handle.current_max_word_length()
 
-    def nr_idempotents(self):
-        return self._handle.nr_idempotents()
+    def nridempotents(self):
+        return self._handle.nridempotents()
     
     def is_done(self):
         return self._handle.is_done()
