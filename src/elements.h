@@ -822,6 +822,24 @@ namespace libsemigroups {
     }
   };
 
+  template <typename T> class Permutation : public Transformation<T> {
+   public:
+    explicit Permutation(std::vector<T>* vector, size_t hv = Element::UNDEFINED)
+        : Transformation<T>(vector, hv) {}
+
+    explicit Permutation(std::vector<T> const& vector)
+        : Transformation<T>(vector) {}
+
+    Permutation* inverse() {
+      size_t const n  = this->_vector->size();
+      Permutation* id = static_cast<Permutation<T>*>(this->identity());
+      for (T i = 0; i < n; i++) {
+        (*id->_vector)[(*this->_vector)[i]] = i;
+      }
+      return id;
+    }
+  };
+
   //! Class for square boolean matrices.
   //!
   //! A *boolean matrix* is a square matrix over the Boolean semiring, under
