@@ -393,8 +393,14 @@ namespace libsemigroups {
     //! replaces the underlying vector of \c this with the underlying vector of
     //! \p x. Any method overriding this one must call
     //! Element::reset_hash_value.
+    //!
+    // TODO update the doc to reflect that this changes the degree of this if
+    // the degree of x is higher.
     void copy(Element const* x) override {
-      assert(x->degree() == this->degree());
+      //assert(x->degree() == this->degree());
+      if (x->degree() > this->degree()) {
+        _vector.resize(x->degree());
+      }
       auto   xx  = static_cast<ElementWithVectorData const*>(x);
       size_t deg = _vector->size();
       for (size_t i = 0; i < deg; i++) {
@@ -565,6 +571,15 @@ namespace libsemigroups {
         vector->push_back(i);
       }
       return new T(vector);
+    }
+
+    bool is_identity() {
+      for (size_t i = 0; i < this->_vector.size(); i++) {
+        if (this->_vector[i] != i) {
+          return false;
+        }
+      }
+      return true;
     }
 
     //! Undefined image value.
@@ -839,9 +854,10 @@ namespace libsemigroups {
       return id;
     }
 
-    bool is_identity() {
-        return this == static_cast<Permutation<T>*>(this->identity());
+    Permutation* conjugate(Permutation* conj) {
+
     }
+
   };
 
   //! Class for square boolean matrices.

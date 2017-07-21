@@ -21,16 +21,14 @@
 #ifndef LIBSEMIGROUPS_SRC_SIMS_H_
 #define LIBSEMIGROUPS_SRC_SIMS_H_
 
+#include <algorithm>
 #include <iostream>
 #include <unordered_map>
-#include <vector>
 #include <unordered_set>
-#include <algorithm>
+#include <vector>
 
-#include "timer.h"
 #include "semigroups.h"
-
-
+#include "timer.h"
 
 namespace libsemigroups {
 
@@ -38,10 +36,18 @@ namespace libsemigroups {
    public:
     Orb(std::vector<ElementType*> gens, PointType seed)
         : mover_map({}),
-          _gens(gens), _orb({seed}),
-          _map({std::make_pair(seed, 0)}) {}
+          _gens(gens),
+          _orb({seed}),
+          _map({std::make_pair(seed, 0)}),
+          _gen({nullptr}),
+          _parent({-1}) {
+      assert(!gens.empty());
+      if (_tmp.degree() < _gens[0].degree()) {
+        _tmp.copy(_gens[0]);
+      }
+    }
 
-    std::unordered_map<PointType, ElementType*>  mover_map;
+    ~Orb();
 
     void enumerate() {
       for (size_t i = 0; i < _orb.size(); i++) {
@@ -50,19 +56,14 @@ namespace libsemigroups {
           if (_map.find(pt) == _map.end()) {
             _map.insert(std::make_pair(pt, _orb.size()));
             _orb.push_back(pt);
-            ElementType* y = new ElementType(*x);
-            if (mover_map.find(pt) == mover_map.end()) {
-                mover_map.insert(std::make_pair(pt, y));
-            }
-            else {
-                mover_map[pt]->redefine(mover_map[pt], y);
-            }
-            delete y;
+            _gen.push_back(x);
+            _parent.push_back(i);
           }
         }
       }
     }
 
+    // TODO change the name to find
     size_t position(PointType pt) {
       auto it = _map.find(pt);
       if (it != _map.end()) {
@@ -73,182 +74,341 @@ namespace libsemigroups {
     }
 
     void reserve(size_t n) {
-      _orb.reserve(n);
       _map.reserve(n);
-      mover_map.reserve(n);
+      _orb.reserve(n);
+      _gen.reserve(n);
+    }
+
+    inline PointType operator[](size_t pos) const {
+      assert(pos < _orb.size());
+      return _orb[pos];
+    }
+
+    inline PointType at(size_t pos) const {
+      return _orb.at(pos);
     }
 
     size_t size() {
       return _orb.size();
     }
 
+    Element const* mapper(size_t pos) {
+      if (pos >= _mappers.size()) {
+        size_t i = pos;
+        assert(i < _orb.size());
+        Element const* out = _gen[i].really_copy();
+        Element const* tmp = out.really_copy();
+        while (out != nullptr) {
+          i = _parent[i];
+          out->redefine(_gen[i], tmp);
+          tmp.copy(out);
+        }
+        _mappers[i] = out;
+      }
+      return _mappers[pos];
+    }
+
    private:
-    std::vector<ElementType*>     _gens;
-    std::vector<PointType>        _orb;
+    std::vector<ElementType*> _gens;
     std::unordered_map<PointType, size_t> _map;
-    // TODO const?
+    std::vector<PointType>    _orb;
+    std::vector<ElementType*> _gen;
+    std::vector<size_t> _parent;
+    std::vector<ElementType*> _mappers;
+    static ElementType* _tmp = new Permutation(new std::vector());
   };
 
-  template <typename ElementType, typename PointType> class DeltaU {
-   public:
-    DeltaU(std::unordered_set<ElementType*> strong_gen_set, PointType seed)
-        : delta(), u(), new_gens({}), _strong_gen_set(strong_gen_set), _seed(seed) {}
-    std::vector<PointType> delta;
-    std::vector<ElementType*> new_gens;
-    std::unordered_map<PointType, ElementType*> u;
+// Schreier-Sims set up
 
-    void enumerate() {
-        for (ElementType* elt : _strong_gen_set) {
-           if ((*elt)[_seed] == _seed)
-               new_gens.push_back(elt);
+#define MAXVERTS = 512
+
+RecVec<Permutation*> strong_gens;
+static Permutation      transversal[MAXVERTS * MAXVERTS];
+static Permutation      transversal_inv[MAXVERTS * MAXVERTS];
+static bool      first_ever_call = true;
+static bool      borbits[MAXVERTS * MAXVERTS];
+static size_t     orbits[MAXVERTS * MAXVERTS];
+static size_t     size_orbits[MAXVERTS];
+static size_t base[MAXVERTS];
+static size_t size_base;
+
+static inline void add_strong_gens(size_t const pos, Permutation* const value) {
+  strong_gens.set(pos, ??, value);
+}
+
+static inline Perm get_strong_gens(size_t const i, size_t const j) {
+  return strong_gens[i]->gens[j];
+}
+
+static inline Perm get_transversal(size_t const i, size_t const j) {
+  return transversal[i * MAXVERTS + j];
+}
+
+static inline Perm get_transversal_inv(size_t const i, size_t const j) {
+  return transversal_inv[i * MAXVERTS + j];
+}
+
+static inline void
+set_transversal(size_t const i, size_t const j, Perm const value) {
+  // free the perm in this position if there is one already
+  if (transversal[i * MAXVERTS + j] != NULL) {
+    free(transversal[i * MAXVERTS + j]);
+    nr_ss_frees++;
+    free(transversal_inv[i * MAXVERTS + j]);
+    nr_ss_frees++;
+  }
+  transversal[i * MAXVERTS + j]     = value;
+  transversal_inv[i * MAXVERTS + j] = invert_perm(value);
+}
+
+static bool perm_fixes_all_base_points(Perm const x) {
+  size_t i;
+
+  for (i = 0; i < size_base; i++) {
+    if (x[base[i]] != base[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static inline void add_base_point(size_t const pt) {
+  base[size_base]               = pt;
+  size_orbits[size_base]        = 1;
+  orbits[size_base * deg]       = pt;
+  borbits[size_base * deg + pt] = true;
+  set_transversal(size_base, pt, id_perm());
+  size_base++;
+}
+
+static inline void first_ever_init() {
+  first_ever_call = false;
+  memset((void*) size_orbits, 0, MAXVERTS * sizeof(size_t));
+}
+
+static void init_stab_chain() {
+  if (first_ever_call) {
+    first_ever_init();
+  }
+
+  memset((void*) borbits, false, deg * deg * sizeof(bool));
+  size_base = 0;
+}
+
+/*static void init_endos_base_points() {
+  size_t  i;
+
+  for (i = 0; i < deg - 1; i++) {
+    add_base_point(i);
+  }
+}*/
+
+static void free_stab_chain() {
+  int i, j, k;
+
+  memset((void*) size_orbits, 0, size_base * sizeof(size_t));
+
+  // free the transversal
+  // free the transversal_inv
+  for (i = 0; i < (int) deg; i++) {
+    for (j = 0; j < (int) deg; j++) {
+      k = i * MAXVERTS + j;
+      if (transversal[k] != NULL) {
+        free(transversal[k]);
+        transversal[k] = NULL;
+        nr_ss_frees++;
+        free(transversal_inv[k]);
+        transversal_inv[k] = NULL;
+        nr_ss_frees++;
+      }
+    }
+  }
+
+  // free the strong_gens
+  for (i = 0; i < (int) size_base; i++) {
+    if (strong_gens[i] != NULL) {
+      free_perm_coll(strong_gens[i]);
+      strong_gens[i] = NULL;
+    }
+  }
+}
+
+static void orbit_stab_chain(size_t const depth, size_t const init_pt) {
+  size_t i, j, pt, img;
+  Perm  x;
+
+  assert(depth <= size_base);  // Should this be strict?
+
+  for (i = 0; i < size_orbits[depth]; i++) {
+    pt = orbits[depth * deg + i];
+    for (j = 0; j < strong_gens[depth]->nr_gens; j++) {
+      x   = get_strong_gens(depth, j);
+      img = x[pt];
+      if (!borbits[depth * deg + img]) {
+        orbits[depth * deg + size_orbits[depth]] = img;
+        size_orbits[depth]++;
+        borbits[depth * deg + img] = true;
+        set_transversal(depth, img, prod_perms(get_transversal(depth, pt), x));
+      }
+    }
+  }
+}
+
+static void add_gen_orbit_stab_chain(size_t const depth, Perm const gen) {
+  size_t i, j, pt, img;
+  Perm  x;
+
+  assert(depth <= size_base);
+
+  // apply the new generator to existing points in orbits[depth]
+  size_t nr = size_orbits[depth];
+  for (i = 0; i < nr; i++) {
+    pt  = orbits[depth * deg + i];
+    img = gen[pt];
+    if (!borbits[depth * deg + img]) {
+      orbits[depth * deg + size_orbits[depth]] = img;
+      size_orbits[depth]++;
+      borbits[depth * deg + img] = true;
+      set_transversal(depth, img, prod_perms(get_transversal(depth, pt), gen));
+    }
+  }
+
+  for (i = nr; i < size_orbits[depth]; i++) {
+    pt = orbits[depth * deg + i];
+    for (j = 0; j < strong_gens[depth]->nr_gens; j++) {
+      x   = get_strong_gens(depth, j);
+      img = x[pt];
+      if (!borbits[depth * deg + img]) {
+        orbits[depth * deg + size_orbits[depth]] = img;
+        size_orbits[depth]++;
+        borbits[depth * deg + img] = true;
+        set_transversal(depth, img, prod_perms(get_transversal(depth, pt), x));
+      }
+    }
+  }
+}
+
+static void sift_stab_chain(Perm* g, size_t* depth) {
+  size_t beta;
+
+  assert(*depth == 0);
+
+  for (; *depth < size_base; (*depth)++) {
+    beta = (*g)[base[*depth]];
+    if (!borbits[*depth * deg + beta]) {
+      return;
+    }
+    prod_perms_in_place(*g, get_transversal_inv(*depth, beta));
+  }
+}
+
+static void schreier_sims_stab_chain(size_t const depth) {
+  Perm  x, h, prod;
+  bool  escape, y;
+  int   i;
+  size_t j, jj, k, l, m, beta, betax;
+
+  for (i = 0; i <= (int) depth; i++) {
+    for (j = 0; j < strong_gens[i]->nr_gens; j++) {
+      x = get_strong_gens(i, j);
+      if (perm_fixes_all_base_points(x)) {
+        for (k = 0; k < deg; k++) {
+          if (k != x[k]) {
+            add_base_point(k);
+            break;
+          }
         }
-        Orb<ElementType, PointType> orb = Orb<ElementType, PointType>(new_gens, _seed);
-        orb.enumerate();
-        delta = orb._orb;
-        u = orb.mover_map;
+      }
+    }
+  }
+
+  for (i = depth + 1; i < (int) size_base + 1; i++) {
+    beta = base[i - 1];
+    // set up the strong generators
+    for (j = 0; j < strong_gens[i - 1]->nr_gens; j++) {
+      x = get_strong_gens(i - 1, j);
+      if (beta == x[beta]) {
+        add_strong_gens(i, copy_perm(x));
+      }
     }
 
+    // find the orbit of <beta> under strong_gens[i - 1]
+    orbit_stab_chain(i - 1, beta);
+  }
 
-    private:
-     std::unordered_set<ElementType*>     _strong_gen_set;
-     PointType                     _seed;
-     // TODO const?
-   };
+  i = size_base - 1;
 
-  template <typename ElementType, typename PointType> class BSGS {
-   public:
-    BSGS(std::vector<ElementType*> gens)
-        : base({}), strong_gen_set({}), _gens(gens) {}
-
-    std::vector<PointType>        base;
-    std::unordered_set<ElementType*> strong_gen_set;
-
-    void enumerate_partial() {
-        for (ElementType* elt : _gens){
-            if (!(elt->is_identity()))
-                strong_gen_set.insert(elt);
-        }
-        std::unordered_set<ElementType*> tempstrong_gen_set = strong_gen_set;
-        bool baseelt_equal_base = true;
-
-        for (ElementType* elt : tempstrong_gen_set) {
-            for (PointType b: base) {
-                baseelt_equal_base = true;
-                if (std::find(base.begin(), base.end(), (*elt)[b]) == base.end()) {
-                    baseelt_equal_base = false;
-                }
+  while (i >= (int) depth) {
+    escape = false;
+    for (j = 0; j < size_orbits[i] && !escape; j++) {
+      beta = orbits[i * deg + j];
+      for (m = 0; m < strong_gens[i]->nr_gens && !escape; m++) {
+        x     = get_strong_gens(i, m);
+        prod  = prod_perms(get_transversal(i, beta), x);
+        betax = x[beta];
+        if (!eq_perms(prod, get_transversal(i, betax))) {
+          y  = true;
+          h  = prod_perms(prod, get_transversal_inv(i, betax));
+          jj = 0;
+          sift_stab_chain(&h, &jj);
+          if (jj < size_base) {
+            y = false;
+          } else if (!is_one(h)) {  // better method? IsOne(h)?
+            y = false;
+            for (k = 0; k < deg; k++) {
+              if (k != h[k]) {
+                add_base_point(k);
+                break;
+              }
             }
-            if (baseelt_equal_base) {
-                for (PointType point: *elt){
-                    if (!(point == (*elt)[point])) {
-                        base.push_back(point);
-                        break;
-                    }
-                }
+          }
+
+          if (!y) {
+            for (l = i + 1; l <= jj; l++) {
+              add_strong_gens(l, copy_perm(h));
+              add_gen_orbit_stab_chain(l, h);
+              // add generator to <h> to orbit of base[l]
             }
-            if (!(*elt == *(elt->inverse())))
-                strong_gen_set.insert(elt->inverse());
+            i      = jj;
+            escape = true;
+          }
+          free(h);
+          nr_ss_frees++;
         }
+        free(prod);
+        nr_ss_frees++;
+      }
     }
+    if (!escape) {
+      i--;
+    }
+  }
+}
 
-    std::pair<ElementType*, size_t> strip(ElementType* g,
-     std::vector<std::vector<PointType>>* delta,
-     std::vector<std::unordered_map<PointType, ElementType*>>* u){
-         ElementType* g_copy = new ElementType(*g);
-         for (size_t l = 1; l <= base.size(); l++){
-             if (std::find(delta[l].begin(), delta[l].end(),
-                *g_copy[base[l]]) != delta[l].end())
-                g_copy.redefine(g_copy, ((*u)[*g_copy[base[l]]])->inverse());
-             else
-                return std::make_pair(g_copy, l);
-         }
-         return make_pair(g_copy, base.size() + 1);
-     }
+extern bool point_stabilizer(PermColl* gens, size_t const pt, PermColl** out) {
+  init_stab_chain();
 
+  strong_gens[0] = copy_perm_coll(gens);
+  add_base_point(pt);
+  schreier_sims_stab_chain(0);
 
-     void enumerate(){
-         this->enumerate_partial();
-         for (size_t i = base.size(); i > 0; i = i - 1){
-             DeltaU<ElementType, PointType> delta_u
-              = DeltaU<ElementType, PointType>(strong_gen_set, base[i]);
-             delta_u.enumerate();
-             for (PointType pt : delta_u.delta) {
-                 for (ElementType* elt : delta_u.new_gens){
-                     ElementType* g = new ElementType(*((delta_u.u)[pt]));
-                     g->redefine(g, elt);
-                     g->redefine(g, (delta_u.u[(*elt)[pt]])->inverse());
-                     if (!(g->is_identity())) {
-                         strong_gen_set.insert(g);
-                         strong_gen_set.insert(g->inverse());
-                         bool g_fixes_base = true;
-                         for (PointType b : base) {
-                             if (!((*g)[b] == b)) {
-                                 g_fixes_base = false;
-                                 break;
-                             }
-                         }
-                         if (g_fixes_base) {
-                             for (PointType new_base_pt : *g) {
-                                 if (!((*g)[new_base_pt] == new_base_pt)) {
-                                     base.push_back(new_base_pt);
-                                     break;
-                                 }
-                             }
-                         }
-                     }
-                 }
-             }
-         }
-     }
-
-
-   private:
-    std::vector<ElementType*>     _gens;
-    // TODO const?
-  };
-
-  // template <typename ElementType, typename PointType> class StabChain {
-  //  public:
-  //   StabChain(std::vector<ElementType*> gens, std::vector<PointType> base)
-  //       : _gens(gens), _base(base), _gen_chain({}) {}
-  //
-  //   void enumerate() {
-  //     for (size_t i = 0; i < _orb.size(); i++) {
-  //       for (ElementType const* x : _gens) {
-  //         PointType pt = (*x)[_orb[i]];
-  //         if (_map.find(pt) == _map.end()) {
-  //           _map.insert(std::make_pair(pt, _orb.size()));
-  //           _orb.push_back(pt);
-  //         }
-  //       }
-  //     }
-  //   }
-  //
-  //   size_t position(PointType pt) {
-  //     auto it = _map.find(pt);
-  //     if (it != _map.end()) {
-  //       return (*it).second;
-  //     } else {
-  //       return -1;
-  //     }
-  //   }
-  //
-  //   void reserve(size_t n) {
-  //     _orb.reserve(n);
-  //     _map.reserve(n);
-  //   }
-  //
-  //   size_t size() {
-  //     return _orb.size();
-  //   }
-  //
-  //  private:
-  //   std::vector<ElementType*>     _gens;
-  //   std::vector<PointType>        _base;
-  //   std::vector<std::vector<ElementType*>>   _gen_chain;
-  //   // TODO const?
-  // };
-
+  // The stabiliser we want is the PermColl pointed to by <strong_gens[1]>
+  // UNLESS <strong_gens[1]> doesn't exists - this means that <strong_gens[0]>
+  // is the stabilizer itself (????)
+  if (*out != NULL) {
+    free_perm_coll(*out);
+  }
+  if (strong_gens[1] == NULL) {
+    // this means that the stabilizer of pt under <gens> is trivial
+    *out = new_perm_coll(1);
+    add_perm_coll(*out, id_perm());
+    free_stab_chain();
+    return true;
+  }
+  *out = copy_perm_coll(strong_gens[1]);
+  free_stab_chain();
+  return false;
+}
 }  // namespace libsemigroups
 
 #endif  // LIBSEMIGROUPS_SRC_SIMS_H_
