@@ -110,3 +110,45 @@ TEST_CASE("Sims 04: ", "[quick][sims][04][orb]") {
   REQUIRE(o.position(327681) == static_cast<size_t>(-1));
   really_delete_cont(gens);
 }
+
+TEST_CASE("Sims 05: ", "[quick][sims][05][BSGS]") {
+  std::vector<Permutation<u_int16_t>*> gens
+      = {new Permutation<u_int16_t>({1, 0, 2}),
+         new Permutation<u_int16_t>({1, 2, 0})};
+  // Semigroup S = Semigroup(gens);
+  // S.set_report(SIMS_REPORT);
+  // REQUIRE(S.size() == 6);
+
+
+  BSGS<Permutation<u_int16_t>, u_int16_t> b
+      = BSGS<Permutation<u_int16_t>, u_int16_t>(gens);
+
+  b.enumerate_partial();
+  REQUIRE(b.base[0] == 1);
+  REQUIRE(b.strong_gen_set.size() == 3);
+
+
+  really_delete_cont(gens);
+}
+
+TEST_CASE("Sims 06: ", "[quick][sims][06][BSGS]") {
+  std::vector<Permutation<u_int16_t>*> gens
+      = {new Permutation<u_int16_t>({1, 0, 2}),
+         new Permutation<u_int16_t>({1, 2, 0})};
+  // Semigroup S = Semigroup(gens);
+  // S.set_report(SIMS_REPORT);
+  // REQUIRE(S.size() == 6);
+
+
+  BSGS<Permutation<u_int16_t>, u_int16_t> b
+      = BSGS<Permutation<u_int16_t>, u_int16_t>(gens);
+
+  b.enumerate();
+  REQUIRE(b.base[0] == 1);
+  REQUIRE(b.base[1] == 2);
+  REQUIRE(b.base.size() == 2);
+  REQUIRE(b.strong_gen_set.size() == 3);
+
+
+  really_delete_cont(gens);
+}

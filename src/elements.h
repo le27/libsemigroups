@@ -838,6 +838,10 @@ namespace libsemigroups {
       }
       return id;
     }
+
+    bool is_identity() {
+        return this == static_cast<Permutation<T>*>(this->identity());
+    }
   };
 
   //! Class for square boolean matrices.
