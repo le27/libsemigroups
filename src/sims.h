@@ -481,6 +481,16 @@ namespace libsemigroups {
     return false;
   }
 
+  extern size_t group_size(PermColl* gens) {
+    PermColl* other;
+    point_stabilizer(gens, 0, other);
+    size_t out = 1;
+    for (size_t i : size_orbits) {
+      out = out * i;
+    }
+    return out;
+  }
+
 }  // namespace libsemigroups
 
 #endif  // LIBSEMIGROUPS_SRC_SIMS_H_

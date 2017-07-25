@@ -152,3 +152,14 @@ template <typename T> static inline void really_delete_cont(T cont) {
 //
 //   really_delete_cont(gens);
 // }
+
+TEST_CASE("Sims 01: ", "[quick][sims][01][orb]") {
+  // Semigroup S = Semigroup(gens);
+  // S.set_report(SIMS_REPORT);
+  // REQUIRE(S.size() == 6);
+
+  PermColl* gens = new_perm_coll(3, 3);
+
+  REQUIRE(group_size(gens) == 6);
+  gens->really_delete();
+}
