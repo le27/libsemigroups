@@ -397,9 +397,9 @@ namespace libsemigroups {
     // TODO update the doc to reflect that this changes the degree of this if
     // the degree of x is higher.
     void copy(Element const* x) override {
-      //assert(x->degree() == this->degree());
+      assert(x->degree() == this->degree());
       if (x->degree() > this->degree()) {
-        _vector.resize(x->degree());
+        _vector->resize(x->degree());
       }
       auto   xx  = static_cast<ElementWithVectorData const*>(x);
       size_t deg = _vector->size();
@@ -574,8 +574,8 @@ namespace libsemigroups {
     }
 
     bool is_identity() {
-      for (size_t i = 0; i < this->_vector.size(); i++) {
-        if (this->_vector[i] != i) {
+      for (size_t i = 0; i < this->_vector->size(); i++) {
+        if (((*(this->_vector)))[i] != i) {
           return false;
         }
       }
@@ -854,10 +854,7 @@ namespace libsemigroups {
       return id;
     }
 
-    Permutation* conjugate(Permutation* conj) {
-
-    }
-
+    Permutation* conjugate(Permutation* conj) {}
   };
 
   //! Class for square boolean matrices.
@@ -1122,7 +1119,7 @@ namespace libsemigroups {
 
    private:
     u_int32_t fuseit(std::vector<u_int32_t>& fuse, u_int32_t pos);
-    void init_trans_blocks_lookup();
+    void      init_trans_blocks_lookup();
 
     static std::vector<std::vector<u_int32_t>> _fuse;
     static std::vector<std::vector<u_int32_t>> _lookup;
