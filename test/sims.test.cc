@@ -153,26 +153,14 @@ template <typename T> static inline void really_delete_cont(T cont) {
 //   really_delete_cont(gens);
 // }Permutation<size_t>* perm1
 
-TEST_CASE("Sims 01: ", "[quick][sims][01][PermColl]") {
+TEST_CASE("Sims 01: ", "[quick][sims][02][group_size]") {
 
-  PermColl* gens = new_perm_coll(0, 3);
-  gens->add_perm_coll(new Permutation<size_t>({0, 2, 1}));
-  gens->add_perm_coll(new Permutation<size_t>({1, 2, 0}));
-
-  PermColl* gens2 = gens->really_copy();
-
-  gens->really_delete();
-  gens2->really_delete();
-}
-
-TEST_CASE("Sims 02: ", "[quick][sims][02][group_size]") {
-
-  PermColl* gens = new_perm_coll(0, 3);
-  gens->add_perm_coll(new Permutation<size_t>({0, 2, 1}));
-  gens->add_perm_coll(new Permutation<size_t>({1, 2, 0}));
+  std::vector<Permutation<size_t>*>* gens
+      = new std::vector<Permutation<size_t>*>({});
+  gens->push_back(new Permutation<size_t>({0, 2, 1}));
+  gens->push_back(new Permutation<size_t>({1, 2, 0}));
 
   REQUIRE(group_size(gens) == 6);
 
-  gens->really_delete();
-
+  really_delete_cont(gens);
 }
