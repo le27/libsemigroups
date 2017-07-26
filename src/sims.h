@@ -181,16 +181,16 @@ namespace libsemigroups {
 
 #define MAXVERTS 512
 
-  static PermColl*            strong_gens[MAXVERTS];
-  static Permutation<size_t>* transversal[MAXVERTS * MAXVERTS];
-  static Permutation<size_t>* transversal_inv[MAXVERTS * MAXVERTS];
-  static bool                 first_ever_call = true;
-  static bool                 borbits[MAXVERTS * MAXVERTS];
-  static size_t               orbits[MAXVERTS * MAXVERTS];
-  static size_t               size_orbits[MAXVERTS];
-  static size_t               base[MAXVERTS];
-  static size_t               size_base;
-  static size_t               deg;
+  static std::vector<PermColl*>            strong_gens(MAXVERTS);
+  static std::vector<Permutation<size_t>*> transversal(MAXVERTS* MAXVERTS);
+  static std::vector<Permutation<size_t>*> transversal_inv(MAXVERTS* MAXVERTS);
+  static bool                              first_ever_call = true;
+  static std::vector<bool>                 borbits(MAXVERTS* MAXVERTS);
+  static std::vector<size_t>               orbits(MAXVERTS* MAXVERTS);
+  static std::vector<size_t>               size_orbits(MAXVERTS);
+  static std::vector<size_t>               base(MAXVERTS);
+  static size_t                            size_base;
+  static size_t                            deg;
 
   static inline void add_strong_gens(size_t const               pos,
                                      Permutation<size_t>* const value) {
@@ -253,7 +253,7 @@ namespace libsemigroups {
 
   static inline void first_ever_init() {
     first_ever_call = false;
-    std::memset((void*) size_orbits, 0, MAXVERTS * sizeof(size_t));
+    // std::memset((void*) size_orbits, 0, MAXVERTS * sizeof(size_t));
   }
 
   static void init_stab_chain() {
@@ -261,14 +261,14 @@ namespace libsemigroups {
       first_ever_init();
     }
 
-    std::memset((void*) borbits, false, deg * deg * sizeof(bool));
+    // std::memset((void*) borbits, false, deg * deg * sizeof(bool));
     size_base = 0;
   }
 
   static void free_stab_chain() {
     int i, j, k;
 
-    std::memset((void*) size_orbits, 0, size_base * sizeof(size_t));
+    // std::memset((void*) size_orbits, 0, size_base * sizeof(size_t));
 
     // free the transversal
     // free the transversal_inv
@@ -302,6 +302,7 @@ namespace libsemigroups {
 
     assert(depth <= size_base);  // Should this be strict?
 
+    orbits[depth * deg] = init_pt;
     for (i = 0; i < size_orbits[depth]; i++) {
       pt = orbits[depth * deg + i];
       for (j = 0; j < strong_gens[depth]->nr_gens; j++) {
@@ -457,37 +458,40 @@ namespace libsemigroups {
       }
     }
   }
+
   extern bool point_stabilizer(PermColl* gens, size_t const pt, PermColl* out) {
     init_stab_chain();
     strong_gens[0] = gens->really_copy();
-      add_base_point(pt);
-      schreier_sims_stab_chain(0);
+    add_base_point(pt);
+    schreier_sims_stab_chain(0);
 
-      // The stabiliser we want is the PermColl pointed to by
-      // UNLESS <strong_gens[1]> doesn't exists - this means that
-      // <strong_gens[0]> is the stabilizer itself (????)
-      if (out != nullptr) {
-        out->really_delete();
-      }
-      if (strong_gens[1] == nullptr) {
-        // this means that the stabilizer of pt under <gens> is trivial
-        out = new_perm_coll(1, deg);
-        out->add_perm_coll(static_cast<Permutation<size_t>*>(
-            (strong_gens)[0]->gens[0]->identity()));
-        free_stab_chain();
-        return true;
-      }
-      out = strong_gens[1]->really_copy();
+    // The stabiliser we want is the PermColl pointed to by
+    // UNLESS <strong_gens[1]> doesn't exists - this means that
+    // <strong_gens[0]> is the stabilizer itself (????)
+    if (out != nullptr) {
+      out->really_delete();
+    }
+    if (strong_gens[1] == nullptr) {
+      // this means that the stabilizer of pt under <gens> is trivial
+      out = new_perm_coll(1, deg);
+      out->add_perm_coll(static_cast<Permutation<size_t>*>(
+          (strong_gens)[0]->gens[0]->identity()));
       free_stab_chain();
-      return false;
+      return true;
+    }
+    out = strong_gens[1]->really_copy();
+    free_stab_chain();
+    return false;
   }
 
   extern size_t group_size(PermColl* gens) {
-    PermColl* other;
-    point_stabilizer(gens, 0, other);
+    init_stab_chain();
+    strong_gens[0] = gens->really_copy();
+    schreier_sims_stab_chain(0);
     size_t out = 1;
-    for (size_t i : size_orbits) {
-      out = out * i;
+    for (size_t i : orbits) {
+       if (i != 0)
+        out = out + 1;
     }
     return out;
   }
