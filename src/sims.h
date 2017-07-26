@@ -127,26 +127,27 @@ namespace libsemigroups {
 
   class PermColl {
    public:
-    std::vector<Permutation<size_t>*>* gens;
-    size_t                             nr_gens;
-    size_t                             deg;
-    size_t                             alloc_size;
+    std::vector<Permutation<size_t>*> gens;
+    size_t                            nr_gens;
+    size_t                            deg;
+    size_t                            alloc_size;
 
     void really_delete() {
-      for (Permutation<size_t>* x : *gens) {
+      for (Permutation<size_t>* x : this->gens) {
         x->really_delete();
         delete x;
       }
-      delete &nr_gens;
-      delete &deg;
-      delete &alloc_size;
+      // TODO: Delete ints?
+      delete this;
     }
 
     PermColl* really_copy() {
-      PermColl* out;
-      for (Permutation<size_t>* x : *gens)
-        out->gens->push_back(
+      PermColl* out = new PermColl;
+      out->gens     = {};
+      for (Permutation<size_t>* x : this->gens) {
+        out->gens.push_back(
             static_cast<Permutation<size_t>*>(x->really_copy()));
+      }
       out->nr_gens    = this->nr_gens;
       out->deg        = this->deg;
       out->alloc_size = this->alloc_size;
@@ -157,12 +158,12 @@ namespace libsemigroups {
       assert(this->nr_gens <= this->alloc_size);
 
       if (this->nr_gens == this->alloc_size) {
-        this->gens->resize(this->nr_gens + 1 * sizeof(Permutation<size_t>));
+        // this->gens.resize(this->nr_gens + 1 * sizeof(Permutation<size_t>));
         (this->alloc_size)++;
-        // nr_ss_allocs++;
-        // nr_ss_frees++;
+        //     // nr_ss_allocs++;
+        //     // nr_ss_frees++;
       }
-      (*(this->gens))[(this->nr_gens)] = gen;
+      this->gens.push_back(gen);
     }
   };
 
@@ -170,7 +171,7 @@ namespace libsemigroups {
     // nr_new_perm_coll++;
     PermColl* coll = new PermColl;
     // nr_ss_allocs++;
-    coll->gens = new std::vector<Permutation<size_t>*>;
+    coll->gens = {};
     // nr_ss_allocs++;
     coll->nr_gens    = 0;
     coll->deg        = deg;
@@ -201,7 +202,7 @@ namespace libsemigroups {
 
   static inline Permutation<size_t>* get_strong_gens(size_t const i,
                                                      size_t const j) {
-    return (*(strong_gens[i]->gens))[j];
+    return (strong_gens[i]->gens)[j];
   }
 
   static inline Permutation<size_t>* get_transversal(size_t const i,
@@ -246,7 +247,7 @@ namespace libsemigroups {
     set_transversal(size_base,
                     pt,
                     static_cast<Permutation<size_t>*>(
-                        (*((strong_gens)[0]->gens))[0]->identity()));
+                        ((strong_gens[0]->gens)[0]->identity())));
     size_base++;
   }
 
@@ -459,26 +460,26 @@ namespace libsemigroups {
   extern bool point_stabilizer(PermColl* gens, size_t const pt, PermColl* out) {
     init_stab_chain();
     strong_gens[0] = gens->really_copy();
-    add_base_point(pt);
-    schreier_sims_stab_chain(0);
+      add_base_point(pt);
+      schreier_sims_stab_chain(0);
 
-    // The stabiliser we want is the PermColl pointed to by <strong_gens[1]>
-    // UNLESS <strong_gens[1]> doesn't exists - this means that
-    // <strong_gens[0]> is the stabilizer itself (????)
-    if (out != nullptr) {
-      out->really_delete();
-    }
-    if (strong_gens[1] == nullptr) {
-      // this means that the stabilizer of pt under <gens> is trivial
-      out = new_perm_coll(1, deg);
-      out->add_perm_coll(static_cast<Permutation<size_t>*>(
-          (*((strong_gens)[0]->gens))[0]->identity()));
+      // The stabiliser we want is the PermColl pointed to by
+      // UNLESS <strong_gens[1]> doesn't exists - this means that
+      // <strong_gens[0]> is the stabilizer itself (????)
+      if (out != nullptr) {
+        out->really_delete();
+      }
+      if (strong_gens[1] == nullptr) {
+        // this means that the stabilizer of pt under <gens> is trivial
+        out = new_perm_coll(1, deg);
+        out->add_perm_coll(static_cast<Permutation<size_t>*>(
+            (strong_gens)[0]->gens[0]->identity()));
+        free_stab_chain();
+        return true;
+      }
+      out = strong_gens[1]->really_copy();
       free_stab_chain();
-      return true;
-    }
-    out = strong_gens[1]->really_copy();
-    free_stab_chain();
-    return false;
+      return false;
   }
 
   extern size_t group_size(PermColl* gens) {
