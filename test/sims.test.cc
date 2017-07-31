@@ -31,140 +31,43 @@ template <typename T> static inline void really_delete_cont(T cont) {
   }
 }
 
-// typedef  Orb<Permutation<u_int16_t>, u_int16_t> OrbPermInt;
-//
-// TEST_CASE("Sims 01: ", "[quick][sims][01][orb]") {
-//   std::vector<Permutation<u_int16_t>*> gens
-//       = {new Permutation<u_int16_t>({1, 0, 2}),
-//          new Permutation<u_int16_t>({1, 2, 0})};
-//   // Semigroup S = Semigroup(gens);
-//   // S.set_report(SIMS_REPORT);
-//   // REQUIRE(S.size() == 6);
-//
-//   Orb<Permutation<u_int16_t>, u_int16_t> o
-//       = Orb<Permutation<u_int16_t>, u_int16_t>(gens, 0);
-//
-//   REQUIRE(o.size() == 1);
-//   o.enumerate();
-//   REQUIRE(o.size() == 3);
-//   really_delete_cont(gens);
-// }
-//
-// TEST_CASE("Sims 02: ", "[quick][sims][02][orb]") {
-//   std::vector<u_int16_t> p;
-//   for (size_t i = 0; i < 32768; i++) {
-//     p.push_back(i + 1);
-//   }
-//   p.push_back(0);
-//
-//   std::vector<Permutation<u_int16_t>*> gens
-//       = {new Permutation<u_int16_t>(p)};
-//
-//   Orb<Permutation<u_int16_t>, u_int16_t> o
-//       = Orb<Permutation<u_int16_t>, u_int16_t>(gens, 2);
-//
-//   REQUIRE(o.size() == 1);
-//   o.enumerate();
-//   REQUIRE(o.size() == 32769);
-//   really_delete_cont(gens);
-// }
-//
-// TEST_CASE("Sims 03: ", "[quick][sims][03][orb]") {
-//   std::vector<u_int32_t>* p = new std::vector<u_int32_t>();
-//   p->reserve(32768001);
-//   for (size_t i = 0; i < 32768000; i++) {
-//     p->push_back(i + 1);
-//   }
-//   p->push_back(0);
-//
-//   std::vector<Permutation<u_int32_t>*> gens
-//       = {new Permutation<u_int32_t>(p)};
-//
-//   Orb<Permutation<u_int32_t>, u_int32_t> o
-//       = Orb<Permutation<u_int32_t>, u_int32_t>(gens, 29);
-//
-//   REQUIRE(o.size() == 1);
-//   o.enumerate();
-//   REQUIRE(o.size() == 32768001);
-//   really_delete_cont(gens);
-// }
-//
-// TEST_CASE("Sims 04: ", "[quick][sims][04][orb]") {
-//   std::vector<u_int32_t>* p = new std::vector<u_int32_t>();
-//   p->reserve(327681);
-//   for (size_t i = 0; i < 327680; i++) {
-//     p->push_back(i + 1);
-//   }
-//   p->push_back(0);
-//
-//   std::vector<Permutation<u_int32_t>*> gens
-//       = {new Permutation<u_int32_t>(p)};
-//
-//   Orb<Permutation<u_int32_t>, u_int32_t> o
-//       = Orb<Permutation<u_int32_t>, u_int32_t>(gens, 29);
-//
-//   REQUIRE(o.size() == 1);
-//   o.enumerate();
-//   REQUIRE(o.position(29) == 0);
-//   REQUIRE(o.position(30) == 1);
-//   REQUIRE(o.position(327681) == static_cast<size_t>(-1));
-//   really_delete_cont(gens);
-// }
+TEST_CASE("Sims 01: ", "[quick][sims][01][group_size]") {
 
-// TEST_CASE("Sims 05: ", "[quick][sims][05][BSGS]") {
-//   std::vector<Permutation<u_int16_t>*> gens
-//       = {new Permutation<u_int16_t>({1, 0, 2}),
-//          new Permutation<u_int16_t>({1, 2, 0})};
-//   // Semigroup S = Semigroup(gens);
-//   // S.set_report(SIMS_REPORT);
-//   // REQUIRE(S.size() == 6);
-//
-//
-//   BSGS<Permutation<u_int16_t>, u_int16_t> b
-//       = BSGS<Permutation<u_int16_t>, u_int16_t>(gens);
-//
-//   b.enumerate_partial();
-//   REQUIRE(b.base[0] == 1);
-//   REQUIRE(b.strong_gen_set.size() == 3);
-//
-//
-//   really_delete_cont(gens);
-// }
-//
-// TEST_CASE("Sims 06: ", "[quick][sims][06][BSGS]") {
-//   std::vector<Permutation<u_int16_t>*> gens
-//       = {new Permutation<u_int16_t>({1, 0, 2}),
-//          new Permutation<u_int16_t>({1, 2, 0})};
-//   // Semigroup S = Semigroup(gens);
-//   // S.set_report(SIMS_REPORT);
-//   // REQUIRE(S.size() == 6);
-//
-//
-//   BSGS<Permutation<u_int16_t>, u_int16_t> b
-//       = BSGS<Permutation<u_int16_t>, u_int16_t>(gens);
-//
-//   b.enumerate();
-//   REQUIRE(b.base[0] == 1);
-//   REQUIRE(b.base[1] == 2);
-//   REQUIRE(b.base.size() == 2);
-//   REQUIRE(b.strong_gen_set.size() == 3);
-//
-//
-//   really_delete_cont(gens);
-// }Permutation<size_t>* perm1
+  std::vector<Permutation<size_t>*>* gens
+      = new std::vector<Permutation<size_t>*>({});
+  gens->push_back(new Permutation<size_t>({0, 2, 1}));
+  gens->push_back(new Permutation<size_t>({1, 2, 0}));
 
-//
-// TEST_CASE("Sims 03: ", "[quick][sims][03][group_size]") {
-//
-//   std::vector<Permutation<size_t>*>* gens
-//       = new std::vector<Permutation<size_t>*>({});
-//   gens->push_back(new Permutation<size_t>({0, 2, 1, 3, 4}));
-//   gens->push_back(new Permutation<size_t>({1, 2, 3, 4, 0}));
-//
-//   REQUIRE(group_size(gens) == 120);
-//
-//   really_delete_cont(gens);
-// }
+  REQUIRE(group_size(gens) == 6);
+
+  really_delete_cont(gens);
+  delete gens;
+}
+
+TEST_CASE("Sims 02: ", "[quick][sims][02][group_size]") {
+
+  std::vector<Permutation<size_t>*>* gens
+      = new std::vector<Permutation<size_t>*>({});
+  gens->push_back(new Permutation<size_t>({0, 2, 1, 3}));
+  gens->push_back(new Permutation<size_t>({1, 2, 3, 0}));
+
+  REQUIRE(group_size(gens) == 24);
+
+  really_delete_cont(gens);
+  delete gens;
+}
+
+TEST_CASE("Sims 03: ", "[quick][sims][03][group_size]") {
+
+  std::vector<Permutation<size_t>*>* gens
+      = new std::vector<Permutation<size_t>*>({});
+  gens->push_back(new Permutation<size_t>({0, 2, 1, 3, 4}));
+  gens->push_back(new Permutation<size_t>({1, 2, 3, 4, 0}));
+
+  REQUIRE(group_size(gens) == 120);
+
+  really_delete_cont(gens);
+}
 TEST_CASE("Sims 04: ", "[quick][sims][04][group_size]") {
 
   std::vector<Permutation<size_t>*>* gens
@@ -176,41 +79,54 @@ TEST_CASE("Sims 04: ", "[quick][sims][04][group_size]") {
 
   really_delete_cont(gens);
 }
-// TEST_CASE("Sims 01: ", "[quick][sims][01][group_size]") {
-//
-//   std::vector<Permutation<size_t>*>* gens
-//       = new std::vector<Permutation<size_t>*>({});
-//   gens->push_back(new Permutation<size_t>({0, 2, 1}));
-//   gens->push_back(new Permutation<size_t>({1, 2, 0}));
-//
-//   REQUIRE(group_size(gens) == 6);
-//
-//   really_delete_cont(gens);
-//   delete gens;
-// }
-//
-// TEST_CASE("Sims 02: ", "[quick][sims][02][group_size]") {
-//
-//   std::vector<Permutation<size_t>*>* gens
-//       = new std::vector<Permutation<size_t>*>({});
-//   gens->push_back(new Permutation<size_t>({0, 2, 1, 3}));
-//   gens->push_back(new Permutation<size_t>({1, 2, 3, 0}));
-//
-//   REQUIRE(group_size(gens) == 24);
-//
-//   really_delete_cont(gens);
-//   delete gens;
-// }
 
-// TEST_CASE("Sims 03: ", "[quick][sims][03][group_size]") {
-//
-//   std::vector<Permutation<size_t>*>* gens
-//       = new std::vector<Permutation<size_t>*>({});
-//   gens->push_back(new Permutation<size_t>({0, 2, 1, 3, 4}));
-//   gens->push_back(new Permutation<size_t>({1, 2, 3, 4, 0}));
-//
-//   REQUIRE(group_size(gens) == 120);
-//
-//   really_delete_cont(gens);
-// }
-//
+TEST_CASE("Sims 05: ", "[quick][sims][05][group_size]") {
+
+  std::vector<Permutation<size_t>*>* gens
+      = new std::vector<Permutation<size_t>*>({});
+  gens->push_back(new Permutation<size_t>({1, 0, 2, 3, 4, 5, 6, 7}));
+  gens->push_back(new Permutation<size_t>({1, 2, 3, 4, 5, 6, 7, 0}));
+
+  REQUIRE(group_size(gens) == 40320);
+
+  really_delete_cont(gens);
+}
+
+TEST_CASE("Sims 06: ", "[quick][sims][06][group_size]") {
+
+  std::vector<Permutation<size_t>*>* gens
+      = new std::vector<Permutation<size_t>*>({});
+  gens->push_back(new Permutation<size_t>({1, 0, 2, 3, 4, 5, 6, 7}));
+  gens->push_back(new Permutation<size_t>({0, 1, 3, 2, 4, 5, 6, 7}));
+  gens->push_back(new Permutation<size_t>({0, 1, 2, 3, 4, 5, 7, 6}));
+
+  REQUIRE(group_size(gens) == 8);
+
+  really_delete_cont(gens);
+}
+
+TEST_CASE("Sims 07: ", "[quick][sims][07][group_size]") {
+
+  std::vector<Permutation<size_t>*>* gens
+      = new std::vector<Permutation<size_t>*>({});
+  gens->push_back(new Permutation<size_t>({1, 0, 2, 3, 4, 5, 6, 7}));
+  gens->push_back(new Permutation<size_t>({0, 1, 3, 2, 4, 5, 6, 7}));
+  gens->push_back(new Permutation<size_t>({0, 1, 2, 3, 5, 4, 6, 7}));
+  gens->push_back(new Permutation<size_t>({0, 1, 2, 3, 4, 5, 7, 6}));
+
+  REQUIRE(group_size(gens) == 16);
+
+  really_delete_cont(gens);
+}
+
+TEST_CASE("Sims 08: ", "[quick][sims][08][group_size]") {
+
+  std::vector<Permutation<size_t>*>* gens
+      = new std::vector<Permutation<size_t>*>({});
+  gens->push_back(new Permutation<size_t>({1, 0, 2, 3, 4, 5, 6, 7, 8}));
+  gens->push_back(new Permutation<size_t>({1, 2, 3, 4, 5, 6, 7, 8, 0}));
+
+  REQUIRE(group_size(gens) == 362880);
+
+  really_delete_cont(gens);
+}
