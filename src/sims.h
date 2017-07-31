@@ -68,12 +68,10 @@ namespace libsemigroups {
   // adds a permutaion to the posth position of strong_gens
   static inline void add_strong_gens(size_t const               pos,
                                      Permutation<size_t>* const value) {
-    if (strong_gens[pos] == nullptr) {
+    if (strong_gens[pos] == nullptr)
       strong_gens[pos] = new std::vector<Permutation<size_t>*>({});
-    }
     strong_gens[pos]->push_back(value);
   }
-
   // TODO: Add back (or not) nr_ss_frees (used to debug membory leaks)
 
   // stores a permutation in the transversal vector
@@ -87,9 +85,8 @@ namespace libsemigroups {
   // checks if x fixes all points in the base
   static bool perm_fixes_all_base_points(Permutation<size_t>* const x) {
     for (size_t i = 0; i < base.size(); i++) {
-      if ((*x)[base[i]] != base[i]) {
+      if ((*x)[base[i]] != base[i])
         return false;
-      }
     }
     return true;
   }
@@ -132,14 +129,12 @@ namespace libsemigroups {
       }
     }
 
-    for (i = 0; i < orbits.size(); i++) {
+    for (i = 0; i < MAXVERTS * MAXVERTS; i++) {
       orbits[i] = 0;
-    }
-    for (i = 0; i < size_orbits.size(); i++) {
-      size_orbits[i] = 0;
-    }
-    for (i = 0; i < borbits.size(); i++) {
       borbits[i] = false;
+    }
+    for (i = 0; i < MAXVERTS; i++) {
+      size_orbits[i] = 0;
     }
   }
 
@@ -215,7 +210,7 @@ namespace libsemigroups {
       beta = (*g)[base[*depth]];
       if (!borbits[*depth * deg + beta])
         return;
-      g->redefine(g->really_copy(), transversal_inv[(*depth) * deg + beta]);
+      g->redefine(g->really_copy(), transversal_inv[*depth * deg + beta]);
     }
     assert(perm_fixes_all_base_points(g));
   }

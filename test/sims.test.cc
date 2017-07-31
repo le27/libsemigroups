@@ -67,6 +67,7 @@ TEST_CASE("Sims 03: ", "[quick][sims][03][group_size]") {
   REQUIRE(group_size(gens) == 120);
 
   really_delete_cont(gens);
+  delete gens;
 }
 TEST_CASE("Sims 04: ", "[quick][sims][04][group_size]") {
 
@@ -78,18 +79,20 @@ TEST_CASE("Sims 04: ", "[quick][sims][04][group_size]") {
   REQUIRE(group_size(gens) == 10);
 
   really_delete_cont(gens);
+  delete gens;
 }
 
 TEST_CASE("Sims 05: ", "[quick][sims][05][group_size]") {
 
   std::vector<Permutation<size_t>*>* gens
       = new std::vector<Permutation<size_t>*>({});
-  gens->push_back(new Permutation<size_t>({1, 0, 2, 3, 4, 5, 6, 7}));
+  gens->push_back(new Permutation<size_t>({0, 6, 2, 3, 4, 5, 1, 7}));
   gens->push_back(new Permutation<size_t>({1, 2, 3, 4, 5, 6, 7, 0}));
 
   REQUIRE(group_size(gens) == 40320);
 
   really_delete_cont(gens);
+  delete gens;
 }
 
 TEST_CASE("Sims 06: ", "[quick][sims][06][group_size]") {
@@ -103,6 +106,7 @@ TEST_CASE("Sims 06: ", "[quick][sims][06][group_size]") {
   REQUIRE(group_size(gens) == 8);
 
   really_delete_cont(gens);
+  delete gens;
 }
 
 TEST_CASE("Sims 07: ", "[quick][sims][07][group_size]") {
@@ -117,6 +121,7 @@ TEST_CASE("Sims 07: ", "[quick][sims][07][group_size]") {
   REQUIRE(group_size(gens) == 16);
 
   really_delete_cont(gens);
+  delete gens;
 }
 
 TEST_CASE("Sims 08: ", "[quick][sims][08][group_size]") {
@@ -129,4 +134,5 @@ TEST_CASE("Sims 08: ", "[quick][sims][08][group_size]") {
   REQUIRE(group_size(gens) == 362880);
 
   really_delete_cont(gens);
+  delete gens;
 }
