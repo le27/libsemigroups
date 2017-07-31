@@ -40,7 +40,6 @@ namespace libsemigroups {
   static std::vector<std::vector<Permutation<size_t>*>*> strong_gens(MAXVERTS);
   static std::vector<Permutation<size_t>*> transversal(MAXVERTS* MAXVERTS);
   static std::vector<Permutation<size_t>*> transversal_inv(MAXVERTS* MAXVERTS);
-  static bool                              first_ever_call = true;
   static std::vector<bool>                 borbits(MAXVERTS* MAXVERTS);
   static std::vector<size_t>               orbits(MAXVERTS* MAXVERTS);
   static std::vector<size_t>               size_orbits(MAXVERTS);
@@ -48,6 +47,7 @@ namespace libsemigroups {
   static size_t                            size_base;
   static size_t                            deg;
 
+  // deletes the contents of a contatainer
   template <typename T> static inline void really_delete_cont(T* cont) {
     for (Permutation<size_t>* x : *cont) {
       x->really_delete();
@@ -55,6 +55,21 @@ namespace libsemigroups {
     }
   }
 
+  // multiplies permutations, creating a new object.
+  static Permutation<size_t>* prod_perms(Permutation<size_t>* x,
+                                         Permutation<size_t>* y) {
+    if (x == nullptr)
+      return static_cast<Permutation<size_t>*>(y->really_copy());
+    if (y == nullptr)
+      return static_cast<Permutation<size_t>*>(x->really_copy());
+    std::vector<size_t> z(deg);
+    for (size_t i = 0; i < deg; i++) {
+      z[i] = (*y)[(*x)[i]];
+    }
+    return new Permutation<size_t>(z);
+  }
+
+  // copies a vector of permutations
   static inline std::vector<Permutation<size_t>*>*
   really_copy_vec(std::vector<Permutation<size_t>*>* cont) {
     std::vector<Permutation<size_t>*>* out
@@ -65,6 +80,7 @@ namespace libsemigroups {
     return out;
   }
 
+  // adds a permutaion to the posth position of strong_gens
   static inline void add_strong_gens(size_t const               pos,
                                      Permutation<size_t>* const value) {
     if (strong_gens[pos] == nullptr) {
@@ -73,36 +89,26 @@ namespace libsemigroups {
     strong_gens[pos]->push_back(value);
   }
 
-  static inline Permutation<size_t>* get_strong_gens(size_t const i,
-                                                     size_t const j) {
-    return (*(strong_gens[i]))[j];
-  }
-
-  static inline Permutation<size_t>* get_transversal(size_t const i,
-                                                     size_t const j) {
-    return transversal[i * MAXVERTS + j];
-  }
-
-  static inline Permutation<size_t>* get_transversal_inv(size_t const i,
-                                                         size_t const j) {
-    return transversal_inv[i * MAXVERTS + j];
-  }
-
   // TODO: Add back (or not) nr_ss_frees (used to debug membory leaks)
+
+  // stores a permutation in the transversal vector
   static inline void set_transversal(size_t const               i,
                                      size_t const               j,
                                      Permutation<size_t>* const value) {
-    // free the perm in this position if there is one already
-    if (transversal[i * MAXVERTS + j] != nullptr) {
-      delete transversal[i * MAXVERTS + j];
-      // nr_ss_frees++;
-      delete transversal_inv[i * MAXVERTS + j];
-      // nr_ss_frees++;
-    }
+    // // free the perm in this position if there is one already
+    // if (transversal[i * MAXVERTS + j] != nullptr) {
+    //   transversal[i * MAXVERTS + j]->really_delete();
+    //   delete transversal[i * MAXVERTS + j];
+    //   // nr_ss_frees++;
+    //   transversal_inv[i * MAXVERTS + j]->really_delete();
+    //   delete transversal_inv[i * MAXVERTS + j];
+    //   // nr_ss_frees++;
+    // }
     transversal[i * MAXVERTS + j]     = value;
     transversal_inv[i * MAXVERTS + j] = value->inverse();
   }
 
+  // checks if x fixes all points in the base
   static bool perm_fixes_all_base_points(Permutation<size_t>* const x) {
     for (size_t i = 0; i < size_base; i++) {
       if ((*x)[base[i]] != base[i]) {
@@ -112,6 +118,7 @@ namespace libsemigroups {
     return true;
   }
 
+  // adds a point to the base (and initialises orbit stuff)
   static inline void add_base_point(size_t const pt) {
     base[size_base]               = pt;
     size_orbits[size_base]        = 1;
@@ -124,25 +131,11 @@ namespace libsemigroups {
     size_base++;
   }
 
-  static inline void first_ever_init() {
-    first_ever_call = false;
-    // std::memset((void*) size_orbits, 0, MAXVERTS * sizeof(size_t));
-  }
-
-  static void init_stab_chain() {
-    if (first_ever_call) {
-      first_ever_init();
-    }
-
-    // std::memset((void*) borbits, false, deg * deg * sizeof(bool));
-    size_base = 0;
-  }
-
+  // empties some variables
   static void free_stab_chain() {
     int i, j, k;
 
     // std::memset((void*) size_orbits, 0, size_base * sizeof(size_t));
-
     // free the transversal
     // free the transversal_inv
     for (i = 0; i < (int) deg; i++) {
@@ -150,9 +143,11 @@ namespace libsemigroups {
         k = i * MAXVERTS + j;
         if (transversal[k] != nullptr) {
           transversal[k]->really_delete();
+          delete transversal[k];
           transversal[k] = nullptr;
           // nr_ss_frees++;
           transversal_inv[k]->really_delete();
+          delete transversal[k];
           transversal_inv[k] = nullptr;
           // nr_ss_frees++;
         }
@@ -163,40 +158,39 @@ namespace libsemigroups {
     for (i = 0; i < (int) size_base; i++) {
       if (strong_gens[i] != nullptr) {
         really_delete_cont(strong_gens[i]);
+        delete strong_gens[i];
         strong_gens[i] = nullptr;
       }
     }
   }
 
-  static void orbit_stab_chain(size_t const depth, size_t const init_pt) {
+  // calculates the orbit of init_pt in the `depth`th stabiliser
+  static void orbit_stab_chain(size_t const depth) {
     size_t               i, j, pt, img;
-    Permutation<size_t>* temp;
     Permutation<size_t>* x;
-
     assert(depth <= size_base);  // Should this be strict?
 
-    orbits[depth * deg] = init_pt;
     for (i = 0; i < size_orbits[depth]; i++) {
       pt = orbits[depth * deg + i];
       for (j = 0; j < strong_gens[depth]->size(); j++) {
-        x   = get_strong_gens(depth, j);
+        x   = (*(strong_gens[depth]))[j];
         img = (*x)[pt];
         if (!borbits[depth * deg + img]) {
           orbits[depth * deg + size_orbits[depth]] = img;
           size_orbits[depth]++;
           borbits[depth * deg + img] = true;
-          temp->redefine(get_transversal(depth, pt), x);
-          set_transversal(depth, img, temp);
+          set_transversal(
+              depth, img, prod_perms(transversal[depth * MAXVERTS + pt], x));
         }
       }
     }
   }
 
+  // apply the new generator to existing points in orbits[depth]
   static void add_gen_orbit_stab_chain(size_t const               depth,
                                        Permutation<size_t>* const gen) {
     size_t               i, j, pt, img;
     Permutation<size_t>* x;
-    Permutation<size_t>* temp;
 
     assert(depth <= size_base);
 
@@ -209,30 +203,30 @@ namespace libsemigroups {
         orbits[depth * deg + size_orbits[depth]] = img;
         size_orbits[depth]++;
         borbits[depth * deg + img] = true;
-        temp->redefine(get_transversal(depth, pt), x);
-        set_transversal(depth, img, temp);
+        set_transversal(
+            depth, img, prod_perms(transversal[depth * MAXVERTS + pt], gen));
       }
     }
 
     for (i = nr; i < size_orbits[depth]; i++) {
       pt = orbits[depth * deg + i];
       for (j = 0; j < strong_gens[depth]->size(); j++) {
-        x   = get_strong_gens(depth, j);
+        x   = (*(strong_gens[depth]))[j];
         img = (*x)[pt];
         if (!borbits[depth * deg + img]) {
           orbits[depth * deg + size_orbits[depth]] = img;
           size_orbits[depth]++;
           borbits[depth * deg + img] = true;
-          temp->redefine(get_transversal(depth, pt), x);
-          set_transversal(depth, img, temp);
+          set_transversal(
+              depth, img, prod_perms(transversal[depth * MAXVERTS + pt], x));
         }
       }
     }
   }
 
+  // changes g so that it fixes the current base
   static void sift_stab_chain(Permutation<size_t>* g, size_t* depth) {
-    size_t               beta;
-    Permutation<size_t>* temp;
+    size_t beta;
     assert(*depth == 0);
 
     for (; *depth < size_base; (*depth)++) {
@@ -240,46 +234,53 @@ namespace libsemigroups {
       if (!borbits[*depth * deg + beta]) {
         return;
       }
-      temp = static_cast<Permutation<size_t>*>(g->really_copy());
-      g->redefine(temp, get_transversal_inv(*depth, beta));
+      *g = *(prod_perms(g, transversal_inv[(*depth) * MAXVERTS + beta]));
     }
+    assert(perm_fixes_all_base_points(g));
   }
 
+  // builds a strong base and generating set for the group generated by
+  // strong_gens[0]  and it's stabilisers up to depth
   static void schreier_sims_stab_chain(size_t const depth) {
     Permutation<size_t>* x;
     Permutation<size_t>* h;
     Permutation<size_t>* prod;
-    bool                 escape, y;
+    bool                 escape, h_fixes_all_base_pts;
     int                  i;
-    size_t               j, jj, k, l, m, beta, betax;
+    size_t               j, no_base_pts_h_fixes, k, l, m, beta, betax;
+
+    // for (Permutation<size_t>* perm : *(strong_gens[1])) {
+    //   assert((*perm)[base[0]] == base[0]);
+    // }
 
     for (i = 0; i <= (int) depth; i++) {
-      for (j = 0; j < strong_gens[i]->size(); j++) {
-        x = get_strong_gens(i, j);
-        if (perm_fixes_all_base_points(x)) {
-          for (k = 0; k < deg; k++) {
-            if (k != (*x)[k]) {
-              add_base_point(k);
-              break;
+      if (!(strong_gens[i] == nullptr)) {
+        for (Permutation<size_t>* x : *(strong_gens[i])) {
+          if (perm_fixes_all_base_points(x)) {
+            for (k = 0; k < deg; k++) {
+              if (k != (*x)[k]) {
+                add_base_point(k);
+                break;
+              }
             }
           }
         }
       }
     }
 
-    for (i = depth + 1; i < (int) size_base + 1; i++) {
+    for (i = depth + 1; i <= (int) size_base; i++) {
       beta = base[i - 1];
       // set up the strong generators
-      for (j = 0; j < strong_gens[i - 1]->size(); j++) {
-        x = get_strong_gens(i - 1, j);
-        if (beta == (*x)[beta]) {
+      for (Permutation<size_t>* y : *(strong_gens[i - 1])) {
+        if (beta == (*y)[beta]) {
+          assert((*y)[base[0]] == base[0]);
           add_strong_gens(i,
-                          static_cast<Permutation<size_t>*>(x->really_copy()));
+                          static_cast<Permutation<size_t>*>(y->really_copy()));
         }
       }
 
-      // find the orbit of <beta> under strong_gens[i - 1]
-      orbit_stab_chain(i - 1, beta);
+      // find the orbit of base[i -1] under strong_gens[i - 1]
+      orbit_stab_chain(i - 1);
     }
 
     i = size_base - 1;
@@ -289,18 +290,22 @@ namespace libsemigroups {
       for (j = 0; j < size_orbits[i] && !escape; j++) {
         beta = orbits[i * deg + j];
         for (m = 0; m < strong_gens[i]->size() && !escape; m++) {
-          x = get_strong_gens(i, m);
-          prod->redefine(get_transversal(i, beta), x);
+          x     = (*(strong_gens[i]))[m];
+          prod  = prod_perms(transversal[i * MAXVERTS + beta], x);
           betax = (*x)[beta];
-          if (!(prod == get_transversal(i, betax))) {
-            y = true;
-            h->redefine(prod, get_transversal_inv(i, betax));
-            jj = 0;
-            sift_stab_chain(h, &jj);
-            if (jj < size_base) {
-              y = false;
+          if (!(prod == transversal[i * MAXVERTS + betax])) {
+            h_fixes_all_base_pts = true;
+            h = prod_perms(prod, transversal_inv[i * MAXVERTS + betax]);
+            no_base_pts_h_fixes = 0;
+            sift_stab_chain(h, &no_base_pts_h_fixes);
+            if ((*h)[base[0]] == base[0])
+              assert(no_base_pts_h_fixes >= 1);
+            if (!((*h)[base[0]] == base[0]))
+              assert(no_base_pts_h_fixes < 1);
+            if (no_base_pts_h_fixes < size_base) {
+              h_fixes_all_base_pts = false;
             } else if (!(h->is_identity())) {  // better method? IsOne(h)?
-              y = false;
+              h_fixes_all_base_pts = false;
               for (k = 0; k < deg; k++) {
                 if (k != (*h)[k]) {
                   add_base_point(k);
@@ -309,14 +314,18 @@ namespace libsemigroups {
               }
             }
 
-            if (!y) {
-              for (l = i + 1; l <= jj; l++) {
+            if (!h_fixes_all_base_pts) {
+              for (l = i + 1; l <= no_base_pts_h_fixes; l++) {
                 add_strong_gens(
                     l, static_cast<Permutation<size_t>*>(h->really_copy()));
+                if (l >= 1) {
+                  assert(no_base_pts_h_fixes >= 1);
+                  assert((*h)[base[0]] == base[0]);
+                }
                 add_gen_orbit_stab_chain(l, h);
                 // add generator to <h> to orbit of base[l]
               }
-              i      = jj;
+              i      = no_base_pts_h_fixes;
               escape = true;
             }
             h->really_delete();
@@ -330,15 +339,24 @@ namespace libsemigroups {
         i--;
       }
     }
+    for (Permutation<size_t>* perm : *(strong_gens[1])) {
+      assert((*perm)[base[0]] == base[0]);
+    }
   }
 
+  // changes out into a generating set for the stabiliser of pt in the group
+  // generated by gens
   extern bool point_stabilizer(std::vector<Permutation<size_t>*>* gens,
                                size_t const                       pt,
                                std::vector<Permutation<size_t>*>* out) {
-    init_stab_chain();
+    size_base      = 0;
     strong_gens[0] = really_copy_vec(gens);
     add_base_point(pt);
     schreier_sims_stab_chain(0);
+
+    for (Permutation<size_t>* perm : *(strong_gens[1])) {
+      assert((*perm)[pt] == pt);
+    }
 
     // The stabiliser we want is the PermColl pointed to by
     // UNLESS <strong_gens[1]> doesn't exists - this means that
@@ -348,30 +366,71 @@ namespace libsemigroups {
     }
     if (strong_gens[1] == nullptr) {
       // this means that the stabilizer of pt under <gens> is trivial
-      std::vector<Permutation<size_t>*>* out
-          = new std::vector<Permutation<size_t>*>({});
-      out->push_back(
-          static_cast<Permutation<size_t>*>((*(strong_gens[0]))[0]->identity()));
+      *out = std::vector<Permutation<size_t>*>({});
+      out->push_back(static_cast<Permutation<size_t>*>(
+          (*(strong_gens[0]))[0]->identity()));
       free_stab_chain();
       return true;
     }
-    out = really_copy_vec(strong_gens[1]);
+    *out = *really_copy_vec(strong_gens[1]);
     free_stab_chain();
     return false;
   }
 
+  // finds the size of the permutation group generated by gens
   extern size_t group_size(std::vector<Permutation<size_t>*>* gens) {
-    init_stab_chain();
-    strong_gens[0] = really_copy_vec(gens);
-    schreier_sims_stab_chain(0);
-    size_t out = 1;
-    for (size_t i : orbits) {
-      if (i != 0)
-        out = out + 1;
+    std::unordered_set<size_t> orbset;
+    deg = ((*gens)[0])->degree();
+    std::vector<size_t>                orb;
+    size_t                             out = 1;
+    std::vector<Permutation<size_t>*>* gens1;
+    std::vector<Permutation<size_t>*>* gens2 = really_copy_vec(gens);
+
+    // No need to check for i = deg - 1, since a permutation that fixes
+    // everything  except one point must also fix that point.
+    for (size_t i = 0; (i <= (deg - 1)); i++) {
+      gens1 = really_copy_vec(gens2);
+      point_stabilizer(gens1, i, gens2);
+
+      for (Permutation<size_t>* perm : *gens2) {
+        assert((*perm)[i] == i);
+      }
+      // orbit
+      orb    = {i};
+      orbset = {i};
+
+      // Cannot iterate through orbit the normal way as we are adding to it.
+      for (size_t j = 0; j < orb.size(); j++) {
+        for (Permutation<size_t>* perm : *gens1) {
+          size_t pt = (*perm)[orb[j]];
+          if (orbset.find(pt) == orbset.end()) {
+            orbset.insert(pt);
+            orb.push_back(pt);
+          }
+        }
+      }
+      out = out * orbset.size();
     }
+    really_delete_cont(gens1);
+    really_delete_cont(gens2);
+    delete gens1;
+    delete gens2;
+    for (size_t i; i < size_base; i++) {
+      base[i] = 0;
+    }
+    size_base = 0;
+    for (size_t i; i < orbits.size(); i++) {
+      orbits[i] = 0;
+    }
+    for (size_t i; i < size_orbits.size(); i++) {
+      size_orbits[i] = 0;
+    }
+    for (size_t i; i < borbits.size(); i++) {
+      borbits[i] = false;
+    }
+    free_stab_chain();
     return out;
   }
-
 }  // namespace libsemigroups
 
 #endif  // LIBSEMIGROUPS_SRC_SIMS_H_

@@ -153,14 +153,64 @@ template <typename T> static inline void really_delete_cont(T cont) {
 //   really_delete_cont(gens);
 // }Permutation<size_t>* perm1
 
-TEST_CASE("Sims 01: ", "[quick][sims][02][group_size]") {
+//
+// TEST_CASE("Sims 03: ", "[quick][sims][03][group_size]") {
+//
+//   std::vector<Permutation<size_t>*>* gens
+//       = new std::vector<Permutation<size_t>*>({});
+//   gens->push_back(new Permutation<size_t>({0, 2, 1, 3, 4}));
+//   gens->push_back(new Permutation<size_t>({1, 2, 3, 4, 0}));
+//
+//   REQUIRE(group_size(gens) == 120);
+//
+//   really_delete_cont(gens);
+// }
+TEST_CASE("Sims 04: ", "[quick][sims][04][group_size]") {
 
   std::vector<Permutation<size_t>*>* gens
       = new std::vector<Permutation<size_t>*>({});
-  gens->push_back(new Permutation<size_t>({0, 2, 1}));
-  gens->push_back(new Permutation<size_t>({1, 2, 0}));
+  gens->push_back(new Permutation<size_t>({0, 4, 3, 2, 1}));
+  gens->push_back(new Permutation<size_t>({1, 2, 3, 4, 0}));
 
-  REQUIRE(group_size(gens) == 6);
+  REQUIRE(group_size(gens) == 10);
 
   really_delete_cont(gens);
 }
+// TEST_CASE("Sims 01: ", "[quick][sims][01][group_size]") {
+//
+//   std::vector<Permutation<size_t>*>* gens
+//       = new std::vector<Permutation<size_t>*>({});
+//   gens->push_back(new Permutation<size_t>({0, 2, 1}));
+//   gens->push_back(new Permutation<size_t>({1, 2, 0}));
+//
+//   REQUIRE(group_size(gens) == 6);
+//
+//   really_delete_cont(gens);
+//   delete gens;
+// }
+//
+// TEST_CASE("Sims 02: ", "[quick][sims][02][group_size]") {
+//
+//   std::vector<Permutation<size_t>*>* gens
+//       = new std::vector<Permutation<size_t>*>({});
+//   gens->push_back(new Permutation<size_t>({0, 2, 1, 3}));
+//   gens->push_back(new Permutation<size_t>({1, 2, 3, 0}));
+//
+//   REQUIRE(group_size(gens) == 24);
+//
+//   really_delete_cont(gens);
+//   delete gens;
+// }
+
+// TEST_CASE("Sims 03: ", "[quick][sims][03][group_size]") {
+//
+//   std::vector<Permutation<size_t>*>* gens
+//       = new std::vector<Permutation<size_t>*>({});
+//   gens->push_back(new Permutation<size_t>({0, 2, 1, 3, 4}));
+//   gens->push_back(new Permutation<size_t>({1, 2, 3, 4, 0}));
+//
+//   REQUIRE(group_size(gens) == 120);
+//
+//   really_delete_cont(gens);
+// }
+//
